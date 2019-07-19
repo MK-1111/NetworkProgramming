@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <regex.h>
 
 #define BUF_SIZE 256
 
@@ -19,6 +20,17 @@ void commun(int sock) {
     char buf2[2*BUF_SIZE];
     int len_r;
 	char response[BUF_SIZE];
+    regex_t regBuf;
+    regmatch_t regMatch[1];
+    char result[100];
+    result[0]='\0';
+    char *uri;
+
+    const char *pattern="GET[^\\n]+HTTP";
+
+    if(regcomp(&regBuf,pattern,REG_EXTENDED|REG_NEWLINE)!=0){
+        DieWithError("regcomp faild");
+    }
 
     buf_old[0]='\0';
 
@@ -26,12 +38,28 @@ void commun(int sock) {
         buf[len_r] = '\0';
         sprintf(buf2,"%s%s",buf_old,buf);
 
+        if(regexec(&regBuf,buf2,1,regMatch,0)!=0){
+            int startindex=regMatch[0].rm_so;
+            int endindex=regMatch[0].rm_eo;
+            strncpy(result,buf2+startindex,endindex-startindex);
+        }
         if (strstr(buf2, "\r\n\r\n")) {
             break;
         }
 
         sprintf(buf_old,"%s",buf);
     }
+
+    regfree(&regBuf);
+
+    if(result[0]!='\0'){
+       uri=strtok(uri," ");
+       uri=strtok(NULL," ");
+       printf("%s\n",uri);
+    }else{
+        DieWithError("No URI");
+    }
+
 
     if (len_r <= 0)
         DieWithError("received() failed.");
@@ -61,6 +89,8 @@ void commun(int sock) {
     sprintf(response, "</title></head><body>ネットワークダイスキ</body></html>");
     if(send(sock, response, strlen(response), 0) != strlen(response))
         DieWithError("send() sent a message of unexpected bytes");
+
+       
 }
 
 int main(int argc, char *argv[]) {
