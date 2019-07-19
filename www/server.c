@@ -35,14 +35,15 @@ void commun(int sock) {
     buf_old[0]='\0';
 
     while((len_r = recv(sock, buf, BUF_SIZE, 0)) > 0){
-        buf[len_r] = '\0';
-        sprintf(buf2,"%s%s",buf_old,buf);
-
         if(regexec(&regBuf,buf2,1,regMatch,0)!=0){
             int startindex=regMatch[0].rm_so;
             int endindex=regMatch[0].rm_eo;
             strncpy(result,buf2+startindex,endindex-startindex);
         }
+
+        buf[len_r] = '\0';
+        sprintf(buf2,"%s%s",buf_old,buf);
+
         if (strstr(buf2, "\r\n\r\n")) {
             break;
         }
@@ -53,7 +54,7 @@ void commun(int sock) {
     regfree(&regBuf);
 
     if(result[0]!='\0'){
-       uri=strtok(uri," ");
+       uri=strtok(result," ");
        uri=strtok(NULL," ");
        printf("%s\n",uri);
     }else{
