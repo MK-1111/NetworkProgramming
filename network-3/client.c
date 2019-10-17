@@ -10,7 +10,7 @@
 
 void DiewithError(char *);
 int prepare_client_socket(char *, int);
-void my_scanf(int);
+void my_scanf(char *, int);
 void commun(int);
 
 void DieWithError(char *errorMessage)
@@ -21,15 +21,49 @@ void DieWithError(char *errorMessage)
 
 void commun(int sock)
 {
-    char buf[BUF_SIZE];
-    int len_r;
-    len_r = recv(sock, buf, BUF_SIZE, 0);
-    if (len_r <= 0)
-        DieWithError("recv() failed");
-    buf[len_r] = '\0';
-    printf("%s\n", buf);
-    if (send(sock, buf, strlen(buf), 0) != strlen(buf))
-        DieWithError("send() sent a message of unexpected bytes");
+   char cmd[2]=""; //コマンド入力用
+   char withdraw[MONEY_DIGIT_SIZE+1]; //引き出し金額
+   char deposit[MONEY_DIGIT_SIZE+1]; //預け入れ金額
+   char msg[BUF_SIZE]; //送信メッセージ
+
+   printf("0:引き出し 1:預け入れ 2:残高照会 9:終了\n");
+   printf("何をしますか？ >");
+
+   my_scanf(cmd,1);
+
+   switch(cmd[0]){
+       case '0':
+       //引き出し処理
+       printf("引き出す金額を入力してください > ");
+       my_scanf(withdraw,MONEY_DIGIT_SIZE);
+       break;
+       case '1':
+       //預け入れ処理
+       printf("預け入れる金額を入力してください > ");
+       my_scanf(deposit,MONEY_DIGIT_SIZE);
+       break;
+       case '2':
+       //残高照会
+       strcpy(msg,"0_0_");
+       break;
+       default:
+       //終了
+       printf("番号が確認できませんでした。\n");
+       return;
+   }
+   //送信処理
+   if(send(sock,msg,strlen(msg),0)!=strlen(msg))
+   DieWithError("send() sent a message of unexpected bytes");
+   //受信処理
+
+   //表示処理
+}
+
+void my_scanf(char *buf,int num_letter){
+    char format[20];
+    sprintf(format,"%s%d%s","%",num_letter,"s%*[^\n]");
+    scanf(format,buf);
+    getchar();
 }
 
 int prepare_client_socket(char *ipaddr, int port)
@@ -40,18 +74,24 @@ int prepare_client_socket(char *ipaddr, int port)
 
     struct sockaddr_in target;
     target.sin_family = AF_INET;
-    target.sin_addr.s_addr = inet(INADDR_ANY);
+    target.sin_addr.s_addr = inet_addr(ipaddr);
     target.sin_port = htons(port);
 
-    bind(servSock, (struct sockaddr *)&servAddress, sizeof(servAddress));
+    if(connect(sock,(struct sockaddr*)&target,sizeof(target))<0)
+    DiewithError("connect() failed");
 
-    return servSock;
+    return sock;
 }
 
-int main(int argc, char **argv[])
+int main(int argc, char *argv[])
 {
     if (argc != 3)
         DieWithError("usage: ./client ip_address port");
 
-    int sock = prepare_client_socket
+    int sock = prepare_client_socket(argv[1],atoi(argv[2]));
+
+    commun(sock);
+    close(sock);
+
+    return 0;
 }
