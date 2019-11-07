@@ -1,0 +1,6 @@
+Exception: STATUS_ACCESS_VIOLATION at eip=611755F6
+eax=00000004 ebx=00000001 ecx=00000000 edx=00000000 esi=004031D6 edi=0061C96C
+ebp=0000006E esp=0061C830 program=Z:\Git\NetworkProgramming\network-3\client.exe, pid 7952, thread main
+cs=0023 ds=002B es=002B fs=0053 gs=002B ss=002B
+Stack trace:
+Frame     Function  Args
